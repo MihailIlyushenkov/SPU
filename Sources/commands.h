@@ -12,3 +12,11 @@ enum CommandType
     rpush = 33,
     rpop = 43
 };
+
+enum RegisterName
+{
+    rax = 1,
+    rbx = 2,
+    rcx = 3,
+    rdx = 4
+};

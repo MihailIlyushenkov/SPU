@@ -1,6 +1,10 @@
 #include <math.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stddef.h>
+
 #include "StackDef.h"
-#include "textsave.h"
 #include "commands.h"
 
 struct SPU_data
@@ -13,7 +17,8 @@ struct SPU_data
     double rdx = 0;
 
     int ComPointer = 0;
-    int ComArray[50] = {0};
+    char* ComBuff = 0;
+    int BuffSize = 0;
 };
 
 int AddComm(SPU_data* SPU)
@@ -122,10 +127,44 @@ int RPopComm(SPU_data* SPU, int Nreg)
     return 0;
 }
 
-int DumpSPU(SPU_data* SPU, int iteration, Text ComText)
+int DumpSPU(SPU_data* SPU)
 {
     DUMP(SPU->stk);
     printf("registers: rax is %lf, rbx if %lf, rcs is %lf, rdx is %lf\n\n", SPU->rax, SPU->rbx, SPU->rcx, SPU->rdx);
+
+
+
+    for (int i = 0; i < SPU->BuffSize; i += 4)
+    {
+        if (i%64 == 0)
+            printf("\n");
+
+        short j = *((short*) (SPU->ComBuff + i));
+        printf("%x ", j);
+    }
+
+    return 0;
+}
+
+int ReadCommands(SPU_data* SPU, const char * FileName)
+{
+    FILE* ComAssFile;
+    ComAssFile = fopen(FileName, "rb");
+
+    if (ComAssFile == NULL)
+    {
+        printf("invalid command file name");
+        return 0;
+    }
+
+    struct stat FileData;
+    stat(FileName, &FileData);
+
+    SPU->BuffSize = FileData.st_size;
+    SPU->ComBuff = (char*) calloc(FileData.st_size, sizeof(char));
+
+    fread(SPU->ComBuff, sizeof(char), FileData.st_size, ComAssFile);
+
     return 0;
 }
 
@@ -137,21 +176,24 @@ int main()
     SPU.stk = MakeStack();
     Error = STACKINIT(SPU.stk, 5);
 
-    Text MyText = {};
-    ReadTextFromFile(&MyText, "TextFiles/CommandAssemblyFile.txt");
+    ReadCommands(&SPU, "TextFiles/CommandAssemblyFile.bin");
 
     int com = 0;
     double arg = 0;
 
-    for(size_t i = 0; (i < MyText.NumberOfLines); i++)
-    {
-        // DumpSPU(&SPU, i, MyText);
+    int STOPFLAG = 0;
 
-        sscanf((MyText.TextPivots)[i], "%d", &com);
+
+    while(!STOPFLAG)
+    {
+        // DumpSPU(&SPU);
+        com = *((int*) (SPU.ComBuff + SPU.ComPointer));
+        // printf("com is %d\n", com);
+
         switch(com){
-            case hlt: return 0;
-            case push:  sscanf((MyText.TextPivots)[i], "%d %lf", &com, &arg);
-                            StackPush(SPU.stk, arg); break;
+            case hlt: STOPFLAG = 1; break;
+            case push:  arg = SPU.ComBuff[SPU.ComPointer + 4];
+                            StackPush(SPU.stk, arg); SPU.ComPointer += 4; break;
 
             case add: AddComm(&SPU); break;
             case sub: SubComm(&SPU); break;
@@ -160,10 +202,13 @@ int main()
             case sqrt_: SqrtComm(&SPU); break;
             case out: OutComm(&SPU); break;
             case in: InComm(&SPU); break;
-            case rpush: sscanf((MyText.TextPivots)[i], "%d %lf", &com, &arg); RPushComm(&SPU, arg); break;
-            case rpop:  sscanf((MyText.TextPivots)[i], "%d %lf", &com, &arg); RPopComm(&SPU, arg); break;
+            case rpush: arg = SPU.ComBuff[SPU.ComPointer + 4]; RPushComm(&SPU, arg); SPU.ComPointer += 4; break;
+
+            case rpop:  arg = SPU.ComBuff[SPU.ComPointer + 4]; RPopComm(&SPU, arg); SPU.ComPointer += 4; break;
             default: printf("invalid command code"); return 0;
         }
+
+        SPU.ComPointer += 4;
     }
     return 0;
 }
