@@ -10,7 +10,8 @@ enum CommandType
     out = 6,
     in = 7,
     rpush = 33,
-    rpop = 43
+    rpop = 43,
+    jump = 28,
 };
 
 enum RegisterName

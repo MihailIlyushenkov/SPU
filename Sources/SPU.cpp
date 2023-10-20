@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stddef.h>
-
+// #include <cstdlib>
+#
 #include "StackDef.h"
 #include "commands.h"
 
@@ -16,7 +17,7 @@ struct SPU_data
     double rcx = 0;
     double rdx = 0;
 
-    int ComPointer = 0;
+    int IP = 0;
     char* ComBuff = 0;
     int BuffSize = 0;
 };
@@ -127,22 +128,55 @@ int RPopComm(SPU_data* SPU, int Nreg)
     return 0;
 }
 
+int JumpComm(SPU_data* SPU, int IPnew)
+{
+    printf("jumping to %d", IPnew);
+    if ((IPnew > SPU->BuffSize) || (IPnew < 0))
+    {
+        printf("invalid jump value %d, must be 0 < IP < %d", IPnew, SPU->BuffSize);
+        abort();
+    }
+    else
+    {
+        SPU->IP = IPnew;
+    }
+    return 0;
+}
+
 int DumpSPU(SPU_data* SPU)
 {
     DUMP(SPU->stk);
-    printf("registers: rax is %lf, rbx if %lf, rcs is %lf, rdx is %lf\n\n", SPU->rax, SPU->rbx, SPU->rcx, SPU->rdx);
 
+    printf("IP is %d", SPU->IP);
+    printf("\nregisters: rax is %lf, rbx if %lf, rcs is %lf, rdx is %lf\n\n", SPU->rax, SPU->rbx, SPU->rcx, SPU->rdx);
 
+    // int cnt = SPU->IP;
+    // int flag = 0;
 
-    for (int i = 0; i < SPU->BuffSize; i += 4)
+    for (int i = 0; i < SPU->BuffSize; i += 1)
     {
-        if (i%64 == 0)
+        if ( (i%16 == 0) && (i!= 0))
+        {
             printf("\n");
-
-        short j = *((short*) (SPU->ComBuff + i));
-        printf("%x ", j);
+//             if ( (cnt < 0) && (flag == 0) )
+//             {
+//                 for (int j = 0; j < 16+cnt; printf(".........") && j++);
+//                 {;}
+//
+//                 printf("^\n");
+//                 flag = 1;
+//             }
+        }
+        char j = *( SPU->ComBuff + i);
+        if (i != SPU->IP) {
+            printf("%-8x ", j);
+        }
+        else {
+            printf(">%-8x ", j);
+        }
     }
 
+    printf("\n");
     return 0;
 }
 
@@ -170,7 +204,6 @@ int ReadCommands(SPU_data* SPU, const char * FileName)
 
 int main()
 {
-
     ErrorType Error = NoError;
     SPU_data SPU = {0};
     SPU.stk = MakeStack();
@@ -179,7 +212,9 @@ int main()
     ReadCommands(&SPU, "TextFiles/CommandAssemblyFile.bin");
 
     int com = 0;
-    double arg = 0;
+
+    int arg_int = 0;
+    double arg_dbl = 0;
 
     int STOPFLAG = 0;
 
@@ -187,28 +222,30 @@ int main()
     while(!STOPFLAG)
     {
         // DumpSPU(&SPU);
-        com = *((int*) (SPU.ComBuff + SPU.ComPointer));
+        com = *((char*) (SPU.ComBuff + SPU.IP));
         // printf("com is %d\n", com);
 
         switch(com){
-            case hlt: STOPFLAG = 1; break;
-            case push:  arg = SPU.ComBuff[SPU.ComPointer + 4];
-                            StackPush(SPU.stk, arg); SPU.ComPointer += 4; break;
+            case hlt:   STOPFLAG = 1; break;
+            case push:  arg_dbl = *((double*) (SPU.ComBuff + SPU.IP + 1));
+                            StackPush(SPU.stk, arg_dbl); SPU.IP += 8; break;
 
-            case add: AddComm(&SPU); break;
-            case sub: SubComm(&SPU); break;
-            case mul: MulComm(&SPU); break;
-            case div_: DivComm(&SPU); break;
+            case add:   AddComm(&SPU); break;
+            case sub:   SubComm(&SPU); break;
+            case mul:   MulComm(&SPU); break;
+            case div_:  DivComm(&SPU); break;
             case sqrt_: SqrtComm(&SPU); break;
-            case out: OutComm(&SPU); break;
-            case in: InComm(&SPU); break;
-            case rpush: arg = SPU.ComBuff[SPU.ComPointer + 4]; RPushComm(&SPU, arg); SPU.ComPointer += 4; break;
-
-            case rpop:  arg = SPU.ComBuff[SPU.ComPointer + 4]; RPopComm(&SPU, arg); SPU.ComPointer += 4; break;
+            case out:   OutComm(&SPU); break;
+            case in:    InComm(&SPU); break;
+            case rpush: arg_int = *((int*) (SPU.ComBuff + SPU.IP + 1));
+                            RPushComm(&SPU, arg_dbl); SPU.IP += 1; break;
+            case rpop:  arg_int = *((int*) (SPU.ComBuff + SPU.IP + 1));
+                            RPopComm(&SPU, arg_dbl); SPU.IP += 1; break;
+            case jump:  arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
+                            JumpComm(&SPU, arg_int); SPU.IP -= 1; break;
             default: printf("invalid command code"); return 0;
         }
-
-        SPU.ComPointer += 4;
+        SPU.IP += 1;
     }
     return 0;
 }

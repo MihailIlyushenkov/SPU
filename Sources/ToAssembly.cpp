@@ -4,23 +4,36 @@
 
 // fwrite(buffer, size of element, count, output)
 
-#define WRITE_int(x) buffwrite_int(buff, &buffptr, (x))
-#define WRITE_dbl(x) buffwrite_dbl(buff, &buffptr, (x))
+#define WRITE_int(x) buffwrite_int(buff, &IP, (x))
+#define WRITE_dbl(x) buffwrite_dbl(buff, &IP, (x))
 
 static const int BUFFSIZE = 1000;
 
-int buffwrite_int(void* buff, int* buffptr, int value)
+int buffwrite_int(void* buff, int* IP, int value)
 {
-    *( (int*) ( (char*) buff + *buffptr) ) = value;
-    *buffptr += 4;
+    *( (char*) ( (char*) buff + *IP) ) = value;
+    *IP += 1;
     return 0;
 }
 
-int buffwrite_dbl(void* buff, int* buffptr, double value)
+int buffwrite_dbl(void* buff, int* IP, double value)
 {
-    *( (double*) ( (char*) buff + *buffptr) ) = value;
-    *buffptr += 8;
+    *( (double*) ( (char*) buff + *IP) ) = value;
+    *IP += 8;
     return 0;
+}
+
+int getlabel(char* charword, int IP)
+{
+    int LabelValue = 0;
+    char* NoLabelCharword = charword + 1;
+
+    if (strcmp(NoLabelCharword, "next") == 0)
+        return IP + 1;
+    else if (sscanf(NoLabelCharword, "%d", &LabelValue) == 1)
+        return LabelValue;
+    else
+        return -1;
 }
 
 int main(void)
@@ -41,31 +54,84 @@ int main(void)
     output = fopen("TextFiles/CommandAssemblyFile.bin", "wb");
 
     char* buff[BUFFSIZE] = {0};
-    int buffptr = 0;
+    int IP = 0;
 
-    char word1[10] = {0};
-    int intword2 = 0;
+    int labelvalue = 0;
+    int labeln = -1;
+
+    char chrword1[10] = {0};
+    double dblword = 0;
     char chrword2[10] = {0};
 
-    int nstringsscaned = fscanf(Comfile, "%s", word1);
+
+
+    int labels[100] = {-1};
+
+    // int jumpIPs[100] = {-1};
+    // int WrongJumpIP = 0;
+
+    int nstringsscaned = fscanf(Comfile, "%s", chrword1);
     while (nstringsscaned >= 1)
     {
-        if (strcmp(word1, "hlt") == 0) {
+        printf("%s\n", chrword1);
+        if (chrword1[0] == ':') {
+            int labeln = getlabel(chrword1, IP);
+            if (labeln != -1) {
+                printf("found label %d to IP %d", labeln, IP);
+                labels[labeln] = IP;
+            }
+        }
+
+        else if (strcmp(chrword1, "jump") == 0) {
+            nstringsscaned = fscanf(Comfile, "%s", chrword1);
+            IP += 2;
+        }
+
+        else if (strcmp(chrword1, "push") == 0) {
+            if (fscanf(Comfile, "%lf", &dblword) == 1)
+                IP += 9;
+            else
+                IP += 2;
+        }
+        else if (strcmp(chrword1, "pop") == 0) {
+            IP += 2;
+        }
+        else {
+            IP += 1;
+        }
+        nstringsscaned = fscanf(Comfile, "%s", chrword1);
+    }
+
+    IP = 0;
+    rewind(Comfile);
+
+    nstringsscaned = fscanf(Comfile, "%s", chrword1);
+    while (nstringsscaned >= 1)
+    {
+        if (chrword1[0] == ':') {
+            int labeln = getlabel(chrword1, IP);
+            // printf("found label %d to IP %d", labeln, IP);
+            if (labeln != -1) {
+                labels[labeln] = IP;
+            }
+        }
+
+        else if (strcmp(chrword1, "hlt") == 0) {
             WRITE_int(hlt);
 
             fprintf(ComAssFile, "%d\n", hlt);
         }
 
-        else if (strcmp(word1, "push") == 0)
+        else if (strcmp(chrword1, "push") == 0)
         {
 
-            if (fscanf(Comfile, "%d", &intword2) == 1)
+            if (fscanf(Comfile, "%lf", &dblword) == 1)
             {
                 WRITE_int(push);
-                WRITE_int(intword2);
+                WRITE_dbl(dblword);
 
                 fprintf(ComAssFile, "%d ", push);
-                fprintf(ComAssFile, "%d\n", intword2);
+                fprintf(ComAssFile, "%lf\n", dblword);
             }
             else
             {
@@ -111,7 +177,7 @@ int main(void)
             }
         }
 
-        else if (strcmp(word1, "pop") == 0)
+        else if (strcmp(chrword1, "pop") == 0)
         {
             fscanf(Comfile, "%s", &chrword2);
             // fprintf(ComAssFile, "pop arg is %s\n", chrword2);
@@ -153,43 +219,76 @@ int main(void)
             }
         }
 
-        else if (strcmp(word1, "add") == 0) {
+        else if (strcmp(chrword1, "jump") == 0) {
+            WRITE_int(jump);
+            if (fscanf(Comfile, "%d", &labelvalue) == 1) {
+                WRITE_int(labelvalue);
+
+                fprintf(ComAssFile, "%d ", jump);
+                fprintf(ComAssFile, "%d\n", labelvalue);
+            }
+            else {
+                fscanf(Comfile, "%s", &chrword2);
+                if (chrword2[0] == ':') {
+                    labeln = getlabel(chrword2, IP);
+
+                    if (labeln != -1) {
+
+                        if (labels[labeln] == -1) {
+                            fprintf(ComAssFile, "unknown label number\n");
+                        }
+                        else {
+                            WRITE_int(labels[labeln]);
+                            fprintf(ComAssFile, "%d ", jump);
+                            fprintf(ComAssFile, "%d\n", labels[labeln]);
+                        }
+                    }
+                    else
+                        fprintf(ComAssFile, "invalid label value");
+                }
+                else {
+                    fprintf(ComAssFile, "invalid syntax\n");
+                }
+            }
+        }
+
+        else if (strcmp(chrword1, "add") == 0) {
             WRITE_int(add);
 
             fprintf(ComAssFile, "%d\n", add);
         }
 
-        else if (strcmp(word1, "sub") == 0) {
+        else if (strcmp(chrword1, "sub") == 0) {
             WRITE_int(sub);
 
             fprintf(ComAssFile, "%d\n", sub);
         }
 
-        else if (strcmp(word1, "mul") == 0) {
+        else if (strcmp(chrword1, "mul") == 0) {
             WRITE_int(mul);
 
             fprintf(ComAssFile, "%d\n", mul);
         }
 
-        else if (strcmp(word1, "div_") == 0) {
+        else if (strcmp(chrword1, "div_") == 0) {
             WRITE_int(div_);
 
             fprintf(ComAssFile, "%d\n", div_);
         }
 
-        else if (strcmp(word1, "sqrt_") == 0) {
+        else if (strcmp(chrword1, "sqrt_") == 0) {
             WRITE_int(sqrt_);
 
             fprintf(ComAssFile, "%d\n", sqrt_);
         }
 
-        else if (strcmp(word1, "out") == 0) {
+        else if (strcmp(chrword1, "out") == 0) {
             WRITE_int(out);
 
             fprintf(ComAssFile, "%d\n", out);
         }
 
-        else if (strcmp(word1, "in") == 0) {
+        else if (strcmp(chrword1, "in") == 0) {
             WRITE_int(in);
 
             fprintf(ComAssFile, "%d\n", in);
@@ -200,10 +299,10 @@ int main(void)
             fprintf(ComAssFile, "invalid syntaxis (command not found)");
         }
 
-        nstringsscaned = fscanf(Comfile, "%s", word1);
+        nstringsscaned = fscanf(Comfile, "%s", chrword1);
     }
 
-    fwrite(buff, sizeof(char), buffptr, output);
+    fwrite(buff, sizeof(char), IP, output);
 
     return 0;
 }
