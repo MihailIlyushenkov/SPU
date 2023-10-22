@@ -12,6 +12,16 @@ enum CommandType
     rpush = 33,
     rpop = 43,
     jump = 28,
+
+    ja = 50,
+    jae = 51,
+    jb = 52,
+    jbe = 53,
+    je = 54,
+    jne = 55,
+
+    call = 65,
+    ret = 66
 };
 
 enum RegisterName

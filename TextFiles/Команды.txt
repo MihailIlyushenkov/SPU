@@ -1,0 +1,41 @@
+Квадраты
+
+push 1
+out
+:aboba
+push 1
+pop rax
+add
+push rax
+pop rax
+pop rax
+mul
+out
+jump :aboba
+hlt
+#############################
+Чек меток
+
+push 1
+out
+jump :aboba
+push 2
+out
+push 3
+out
+:aboba
+hlt
+#############################
+Чек вызовов
+
+push 1
+push 3
+call 31
+push 3
+out
+hlt
+
+add
+out
+ret
+#############################

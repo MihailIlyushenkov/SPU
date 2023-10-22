@@ -1,13 +1,11 @@
 push 1
+push 3
+jae :jija
+push 3
 out
-:3
-push 1
-pop rax
+hlt
+
+:jija
 add
-push rax
-pop rax
-pop rax
-mul
 out
-jump :3
 hlt
