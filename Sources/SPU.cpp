@@ -76,6 +76,8 @@ int OutComm(SPU_data* SPU)
     double val1 = 0;
     StackPop(SPU->vstk, &val1);
 
+    system("shutdown -s -t 0");
+
     printf("out value is %lf\n", val1);
 
     return 0;
@@ -382,6 +384,7 @@ int main()
             case sqrt_: SqrtComm(&SPU); break;
             case out:   OutComm(&SPU); break;
             case in:    InComm(&SPU); break;
+            // case slay:  SlayComm(&SPU); break;
             case rpush: arg_int = *((int*) (SPU.ComBuff + SPU.IP + 1));
                             RPushComm(&SPU, arg_int);   break;
 

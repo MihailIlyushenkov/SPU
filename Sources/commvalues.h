@@ -21,7 +21,9 @@ enum CommandType
     jne = 55,
 
     call = 65,
-    ret = 66
+    ret = 66,
+
+    slay = 99
 };
 
 enum RegisterName
