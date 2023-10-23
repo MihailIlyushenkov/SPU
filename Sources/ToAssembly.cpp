@@ -1,20 +1,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "commands.h"
+#include "commvalues.h"
+#include "AssFunck.h"
 
 #define WRITE_int(x) buffwrite_int(buff, &IP, (x))
 #define WRITE_dbl(x) buffwrite_dbl(buff, &IP, (x))
 #define WRITE_label(x) writelabel(Comfile, ComAssFile, labels, &labelnow, &IP, buff, (x))
 #define WRITE_int_inFunc(x) buffwrite_int(buff, IP, (x))
 
-static const int BUFFSIZE = 1000;
 
-struct label
-{
-    char name[20] = {0};
-    int labelp = -1;
-};
+
 
 int buffwrite_int(void* buff, int* IP, int value)
 {
@@ -40,7 +36,7 @@ int createlabel(label* label, char* namestr, int labelp)
 int labelvalue(label** labels, label* seeklabel)
 {
     int i = 0;
-    while ((labels[i] != 0) && (i < 100))
+    while ((labels[i] != 0) && (i < MAXLABELSNUM))
     {
         if (strcmp(labels[i]->name, seeklabel->name) == 0)
         {
@@ -64,12 +60,13 @@ int labelvalue(label** labels, label* seeklabel)
 int showlabel(label* label2show)
 {
     printf("labels name is %s, pointer is %d\n", label2show->name, label2show->labelp);
+    return 0;
 }
 
 int writelabel(FILE* Comfile, FILE* ComAssFile, label** labels, label* labelnow, int* IP, char** buff, CommandType arg)
 {
     int labelp = -1;
-    char chrwordlabel[20] = {0};
+    char chrwordlabel[LNAMESIZE] = {0};
     fscanf(Comfile, "%s", &chrwordlabel);
     if (chrwordlabel[0] == ':') {
         createlabel(labelnow, (chrwordlabel + 1), *IP);
@@ -88,6 +85,7 @@ int writelabel(FILE* Comfile, FILE* ComAssFile, label** labels, label* labelnow,
     else {
         fprintf(ComAssFile, "invalid syntax\n");
     }
+    return 0;
 }
 
 int main(void)
@@ -107,16 +105,16 @@ int main(void)
     FILE* output;
     output = fopen("TextFiles/CommandAssemblyFile.bin", "wb");
 
-    char* buff[BUFFSIZE] = {0};
+    char** buff = (char**) calloc(BUFFSIZE, sizeof(char));
     int IP = 0;
 
-    char chrword1[20] = {0};
+    char chrword1[COMSIZE] = {0};
     double dblword = 0;
-    char chrword2[20] = {0};
+    char chrword2[COMSIZE] = {0};
 
     label labelnow = {0};
 
-    label* labels[100] = {0};
+    label** labels = (label**) calloc(MAXLABELSNUM, sizeof(char));
 
 
     int nstringsscaned = fscanf(Comfile, "%s", chrword1);
@@ -133,7 +131,6 @@ int main(void)
             // if (labelvalue(labels, &labelnow) == -1)
             //     printf("found new label %s on IP %d\n", labelnow.name, labelnow.labelp);
         }
-
         else if ( (strcmp(chrword1, "jump") == 0) || (strcmp(chrword1, "call") == 0) ||
                         (strcmp(chrword1, "ja") == 0) || (strcmp(chrword1, "jae") == 0) || (strcmp(chrword1, "jb") == 0) ||
                         (strcmp(chrword1, "jbe") == 0) || (strcmp(chrword1, "je") == 0) || (strcmp(chrword1, "jne") == 0)) {
@@ -141,7 +138,6 @@ int main(void)
             nstringsscaned = fscanf(Comfile, "%s", chrword1);
             IP += 2;
         }
-
         else if (strcmp(chrword1, "push") == 0) {
             if (fscanf(Comfile, "%lf", &dblword) == 1)
                 IP += 9;
@@ -433,6 +429,19 @@ int main(void)
     }
 
     fwrite(buff, sizeof(char), IP, output);
+
+    fclose(Comfile);
+    fclose(ComAssFile);
+    fclose(output);
+
+    for (int m = 0; m < IP; m++)
+    {
+        // printf("%p\n", labels[m]);
+        if (labels[m] != 0)
+            free(labels[m]);
+        else
+            break;
+    }
 
     return 0;
 }

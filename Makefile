@@ -3,8 +3,8 @@ CFLAGS = -Wshadow -Winit-self -Wredundant-decls -Wcast-align -Wundef -Wfloat-equ
 
 all: NormalStart
 
-NormalStart: ToAssembly ArrayMk3.o  SPU.o StackBody.o
-	Objects\ToAssembly.exe && $(CC) Objects\ArrayMk3.o Objects\SPU.o Objects\StackBody.o -o SPU.exe
+NormalStart: ToAssembly SPU.o StackBody.o
+	Objects\ToAssembly.exe && $(CC) Objects\SPU.o Objects\StackBody.o -o SPU.exe
 
 test: ToAssembly Disassembly
 	Objects\ToAssembly.exe && Objects\Disassembly.exe
@@ -20,9 +20,6 @@ Disassembly.o: Sources\Disassembly.cpp
 
 ToAssembly.o: Sources\ToAssembly.cpp
 	$(CC) $(CFLAGS) -c Sources\ToAssembly.cpp -o Objects\ToAssembly.o
-
-ArrayMk3.o: Sources\ArrayMk3.cpp
-	$(CC) $(CFLAGS) -c Sources\ArrayMk3.cpp -o Objects\ArrayMk3.o
 
 SPU.o: Sources\SPU.cpp
 	$(CC) $(CFLAGS) -c Sources\SPU.cpp -o Objects\SPU.o

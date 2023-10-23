@@ -1,31 +1,15 @@
 #include <math.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <cstdlib>
 #include <stdio.h>
 #include <stddef.h>
-// #include <cstdlib>
 
-#include "StackDef.h"
-#include "commands.h"
-
-struct SPU_data
-{
-    stack* vstk = 0;
-    stack* cstk = 0;
-
-    double rax = 0;
-    double rbx = 0;
-    double rcx = 0;
-    double rdx = 0;
-
-    int IP = 0;
-    char* ComBuff = 0;
-    int BuffSize = 0;
-};
+#include "commdefs.h"
 
 int iszero(double a, double b)
 {
-    (abs(a-b)>0.0001)?0:1;
+    return (abs(a-b)>0.0001)?0:1;
 }
 
 int AddComm(SPU_data* SPU)
@@ -118,6 +102,7 @@ int RPushComm(SPU_data* SPU, int Nreg)
         case 4: StackPop(SPU->vstk, &(SPU->rdx)); break;
         default: printf("Fatal error: invalid register name"); break;
     }
+    SPU->IP += 1;
     return 0;
 }
 
@@ -131,7 +116,9 @@ int RPopComm(SPU_data* SPU, int Nreg)
         case 4: StackPush(SPU->vstk, SPU->rdx); break;
         default: printf("Fatal error: invalid register name"); break;
     }
+    SPU->IP += 1;
     return 0;
+
 }
 
 int JumpComm(SPU_data* SPU, int IPnew)
@@ -165,6 +152,8 @@ int JumpAComm(SPU_data* SPU, int IPnew)
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
+
+    return 0;
 }
 
 int JumpAEComm(SPU_data* SPU, int IPnew)
@@ -183,6 +172,8 @@ int JumpAEComm(SPU_data* SPU, int IPnew)
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
+
+    return 0;
 }
 
 int JumpBComm(SPU_data* SPU, int IPnew)
@@ -201,6 +192,8 @@ int JumpBComm(SPU_data* SPU, int IPnew)
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
+
+    return 0;
 }
 
 int JumpBEComm(SPU_data* SPU, int IPnew)
@@ -219,6 +212,7 @@ int JumpBEComm(SPU_data* SPU, int IPnew)
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
+    return 0;
 }
 
 int JumpEComm(SPU_data* SPU, int IPnew)
@@ -237,6 +231,7 @@ int JumpEComm(SPU_data* SPU, int IPnew)
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
+    return 0;
 }
 
 int JumpNEComm(SPU_data* SPU, int IPnew)
@@ -255,6 +250,7 @@ int JumpNEComm(SPU_data* SPU, int IPnew)
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
+    return 0;
 }
 
 int CallComm(SPU_data* SPU, int IPnew)
@@ -353,6 +349,11 @@ int main()
     Error = STACKINIT(SPU.vstk, 5);
     Error = STACKINIT(SPU.cstk, 5);
 
+    if (Error != NoError)
+    {
+        printf("cant initiate stack.");
+        return 0;
+    }
     ReadCommands(&SPU, "TextFiles/CommandAssemblyFile.bin");
 
     int com = 0;
@@ -382,36 +383,36 @@ int main()
             case out:   OutComm(&SPU); break;
             case in:    InComm(&SPU); break;
             case rpush: arg_int = *((int*) (SPU.ComBuff + SPU.IP + 1));
-                            RPushComm(&SPU, arg_dbl); SPU.IP += 1; break;
+                            RPushComm(&SPU, arg_int);   break;
 
             case rpop:  arg_int = *((int*) (SPU.ComBuff + SPU.IP + 1));
-                            RPopComm(&SPU, arg_dbl); SPU.IP += 1; break;
+                            RPopComm(&SPU, arg_int);    break;
 
             case jump:  arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
-                            JumpComm(&SPU, arg_int); SPU.IP; break;
+                            JumpComm(&SPU, arg_int);    break;
 
             case call:  arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
-                            CallComm(&SPU, arg_int); SPU.IP; break;
+                            CallComm(&SPU, arg_int);    break;
 
             case ret:   RetComm(&SPU); break;
 
             case ja:    arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
-                            JumpAComm(&SPU, arg_int); break;
+                            JumpAComm(&SPU, arg_int);   break;
 
             case jae:   arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
-                            JumpAEComm(&SPU, arg_int); break;
+                            JumpAEComm(&SPU, arg_int);  break;
 
             case jb:    arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
-                            JumpBComm(&SPU, arg_int); break;
+                            JumpBComm(&SPU, arg_int);   break;
 
             case jbe:   arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
-                            JumpBEComm(&SPU, arg_int); break;
+                            JumpBEComm(&SPU, arg_int);  break;
 
             case je:    arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
-                            JumpEComm(&SPU, arg_int); break;
+                            JumpEComm(&SPU, arg_int);   break;
 
             case jne:   arg_int = *((char*) (SPU.ComBuff + SPU.IP + 1));
-                            JumpNEComm(&SPU, arg_int); break;
+                            JumpNEComm(&SPU, arg_int);  break;
 
             default: printf("invalid command code"); return 0;
         }
