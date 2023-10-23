@@ -1,11 +1,14 @@
-push 1
-push 3
-jae :jija
-push 3
+in
+in
+jae :AboveE
+jbe :BelowE
+
+:AboveE
+add
 out
 hlt
 
-:jija
-add
+:BelowE
+sub
 out
 hlt

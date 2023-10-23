@@ -47,7 +47,7 @@ int SubComm(SPU_data* SPU)
 
     StackPop(SPU->vstk, &val1);
     StackPop(SPU->vstk, &val2);
-    StackPush(SPU->vstk, val2 - val1);
+    StackPush(SPU->vstk, val1 - val2);
 
     return 0;
 }
@@ -160,6 +160,8 @@ int JumpAComm(SPU_data* SPU, int IPnew)
         printf("jupming to %d cuz %lf > %lf\n", IPnew, a, b);
         JumpComm(SPU, IPnew);
     }
+    else
+        SPU->IP += 1;
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
@@ -176,6 +178,8 @@ int JumpAEComm(SPU_data* SPU, int IPnew)
         printf("jupming to %d cuz %lf >= %lf\n", IPnew, a, b);
         JumpComm(SPU, IPnew);
     }
+    else
+        SPU->IP += 1;
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
@@ -192,6 +196,8 @@ int JumpBComm(SPU_data* SPU, int IPnew)
         printf("jupming to %d cuz %lf < %lf", IPnew, a, b);
         JumpComm(SPU, IPnew);
     }
+    else
+        SPU->IP += 1;
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
@@ -208,6 +214,8 @@ int JumpBEComm(SPU_data* SPU, int IPnew)
         printf("jupming to %d cuz %lf <= %lf", IPnew, a, b);
         JumpComm(SPU, IPnew);
     }
+    else
+        SPU->IP += 1;
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
@@ -224,6 +232,8 @@ int JumpEComm(SPU_data* SPU, int IPnew)
         printf("jupming to %d cuz %lf == %lf", IPnew, a, b);
         JumpComm(SPU, IPnew);
     }
+    else
+        SPU->IP += 1;
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
@@ -240,6 +250,8 @@ int JumpNEComm(SPU_data* SPU, int IPnew)
         printf("jupming to %d cuz %lf != %lf", IPnew, a, b);
         JumpComm(SPU, IPnew);
     }
+    else
+        SPU->IP += 1;
 
     StackPush(SPU->vstk, b);
     StackPush(SPU->vstk, a);
@@ -355,7 +367,7 @@ int main()
     {
         // DumpSPU(&SPU);
         com = *((char*) (SPU.ComBuff + SPU.IP));
-        printf("com is %d\n", com);
+        // printf("com is %d\n", com);
 
         switch(com){
             case hlt:   STOPFLAG = 1; break;
