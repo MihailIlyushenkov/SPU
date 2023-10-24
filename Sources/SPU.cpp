@@ -1,7 +1,7 @@
 #include <math.h>
 #include <sys/stat.h>
 #include <stdlib.h>
-#include <cstdlib>
+// #include <cstdlib>
 #include <stdio.h>
 #include <stddef.h>
 
@@ -75,8 +75,6 @@ int OutComm(SPU_data* SPU)
 {
     double val1 = 0;
     StackPop(SPU->vstk, &val1);
-
-    system("shutdown -s -t 0");
 
     printf("out value is %lf\n", val1);
 
