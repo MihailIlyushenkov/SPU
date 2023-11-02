@@ -1,5 +1,5 @@
-const int BUFFSIZE = 1000;
-const int LNAMESIZE = 20;
+const int BUFFSIZE = 2000;
+const int LNAMESIZE = 30;
 const int COMSIZE = 20;
 const int MAXLABELSNUM = 100;
 

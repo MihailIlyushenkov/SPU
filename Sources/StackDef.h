@@ -9,6 +9,25 @@ typedef double elem_t;
 
 const int base = 31, mod = 1e9+7;
 
+struct stack
+{
+    void* leftcanary = 0;
+
+    const char* stackname = 0;
+    const char* filename = 0;
+    const char* funcname = 0;
+    size_t line = 0;
+
+    elem_t * data = 0;
+    size_t size = 0;
+    size_t capacity = 0;
+
+    size_t StackHashVal = 0;
+    size_t DataHashVal = 0;
+
+    void* rightcanary = 0;
+};
+
 enum ErrorType
 {
     NoError = 0,

@@ -12,8 +12,10 @@ struct SPU_data
     double rdx = 0;
 
     int IP = 0;
-    char* ComBuff = 0;
+    int* ComBuff = 0;
     int BuffSize = 0;
+
+    double* RAM_p[10] = {0};
 };
 
 int iszero(double a, double b);

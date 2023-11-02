@@ -39,3 +39,165 @@ add
 out
 ret
 #############################
+чек именованных меток
+push 10
+push 20
+push rax
+call :jija
+out
+hlt
+
+:jija
+pop rax
+ret
+###################################
+чек памяти
+allocmem 0 100
+in
+in
+pushmem 0 0
+out
+popmem 0 0
+out
+hlt
+
+
+###################################
+allocmem 0 150
+push 0
+push rax
+push 100
+push rbx
+
+call :zapol
+push 0
+push rbx
+push 100
+push rax
+
+call :vivod
+
+pop rax
+out
+hlt
+
+
+:zapol
+
+pop rbx
+pop rax
+ja :vozwr
+
+pop rax
+pop rax
+pushmem 0 -1
+
+pop rax
+push 1
+add
+push rax
+jump :zapol
+
+:vozwr
+ret
+
+
+:vivod
+pop rbx
+pop rax
+
+jbe :vozwr
+
+pop rax
+popmem 0 -1
+out
+
+push 1
+pop rax
+sub
+push rax
+
+jump :vivod
+
+
+################################################
+пончик
+allocmem 0 16
+allocmem 1 1760
+allocmem 2 1760
+
+:mainloop
+
+push 0
+push rax
+call :memset1
+
+push 0
+push rax
+
+call :memset2
+push 0
+push rax
+
+
+
+
+
+:memset1
+push 1760
+pop rax
+jae :end
+
+push 32
+pop rax
+pushmem 1 -1
+
+push 1
+pop rax
+add
+push rax
+jump :memset1
+
+
+:memset2
+push 1760
+pop rax
+jae :end
+
+push 0
+pop rax
+pushmem 1 -1
+
+push 1
+pop rax
+add
+push rax
+jump :memset2
+
+
+
+:end hlt
+
+
+
+################
+call :bebra
+out
+call :bebra
+out
+hlt
+
+:bebra
+in
+mod 80
+jump :end
+
+
+:end
+ret
+
+
+
+
+
+

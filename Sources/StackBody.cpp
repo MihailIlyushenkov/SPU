@@ -1,23 +1,6 @@
 #include "StackDef.h"
 
-struct stack
-{
-    void* leftcanary = 0;
 
-    const char* stackname = 0;
-    const char* filename = 0;
-    const char* funcname = 0;
-    size_t line = 0;
-
-    elem_t * data = 0;
-    size_t size = 0;
-    size_t capacity = 0;
-
-    size_t StackHashVal = 0;
-    size_t DataHashVal = 0;
-
-    void* rightcanary = 0;
-};
 
 
 void ErrorPrint(ErrorType Error);
@@ -88,16 +71,18 @@ void dump(stack * stk, const char* DumpCallFlile, const char* DumpCallFunction, 
 
     printf("\n\n----------DUMPING STACK----------\n\n");
 
-    if (StackCheck(stk) != 0)
-    {
-        ErrorPrint(StackCheck(stk));
-        return;
-    }
+    // if (StackCheck(stk) != 0)
+    // {
+    //     ErrorPrint(StackCheck(stk));
+    //     return;
+    // }
 
 //     printf("Dump was called in file %s, in function %s, on line %d\n", DumpCallFlile, DumpCallFunction, DumpCallLine);
 //
-//     printf("Dumping stack %s (was created in file %s, in function %s, on line %llu)\n\n\n",
-//                                         stk->stackname, stk->filename, stk->funcname, stk->line);
+    // printf("Dumping stack %s (was created in file %s, in function %s, on line %llu)\n\n\n",
+    //                                     stk->stackname, stk->filename, stk->funcname, stk->line);
+
+    printf("Dumping stack %s \n", stk->stackname);
 //
 //     printf("stack pointer is %p\n\n", stk);
 //
@@ -121,7 +106,7 @@ void dump(stack * stk, const char* DumpCallFlile, const char* DumpCallFunction, 
     const char * prefix = "*";
     const char * postfix = "";
 
-    for (size_t j = 0; j < stk->capacity; j++)
+    for (size_t j = 0; j < 200 ; j++)
     {
         if (j >= stk->size)
         {
@@ -131,6 +116,8 @@ void dump(stack * stk, const char* DumpCallFlile, const char* DumpCallFunction, 
 
         printf("%s[%llu]%s = %lf\n", prefix, j, postfix, *(stk->data + j));
     }
+
+    abort();
 }
 
 ErrorType StackCheck(stack * stk)
@@ -140,7 +127,7 @@ ErrorType StackCheck(stack * stk)
         return VoidStack;
     }
 
-    else if ((stk ->capacity == -1) && (stk->data == 0))
+    else if ((stk->capacity == -1) && (stk->data == 0))
     {
         return DestroyedStack;
     }
@@ -248,11 +235,11 @@ ErrorType StackDtor(stack * stk)
 
 ErrorType StackPush (stack * stk, elem_t value)
 {
-    if (StackCheck(stk) != 0)
-    {
-        DUMP(stk);
-        return StackCheck(stk);
-    }
+    // if (StackCheck(stk) != 0)
+    // {
+    //     DUMP(stk);
+    //     return StackCheck(stk);
+    // }
 
     if ( (stk -> capacity) == (stk -> size))
     {
@@ -280,10 +267,18 @@ ErrorType StackPush (stack * stk, elem_t value)
 
 ErrorType StackPop(stack * stk, elem_t* value)
 {
-    if (StackCheck(stk) != 0)
-    {
-        DUMP(stk);
-        return StackCheck(stk);
+    // if (stk->size < 2)
+    // {
+    //     printf("ja eblan %d\n", stk->size);
+    // }
+    // if (StackCheck(stk) != 0)
+    // {
+    //     DUMP(stk);
+    //     return StackCheck(stk);
+    // }
+    if ((stk->size) == 0) {
+        printf("attempt to take value from empty stack %s\n", stk->stackname);
+        return VoidStack;
     }
 
     *value = stk->data[stk->size - 1];

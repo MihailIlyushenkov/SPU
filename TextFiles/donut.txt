@@ -40,16 +40,19 @@ call :memset2
 push 0
 push rax
 
+
 push 0
 push rbx
 
 call :loop1
 
-
+printarr
+hlt
 
 push 0
 pushmem 0 15
 clear
+
 
 
 call :loop3
@@ -65,22 +68,13 @@ popmem 0 15
 jae :end
 
 popmem 0 15
-mod 80
+push rax
+call :modeighty
 
-push 0
-je :putten
-
-popmem 0 15
-popmem 2 -1
-prchar
-
-:cont1
 popmem 0 15
 push 1
 add
-
 pushmem 0 15
-
 
 jump :loop3
 
@@ -96,6 +90,9 @@ push 0
 push rax
 
 call :loop2
+push 777
+out
+printarr
 
 pop rbx
 push 0.07
@@ -298,12 +295,12 @@ pushmem 1 -1
 push 0
 popmem 0 14
 jbe :Nbelowzero
+
 popmem 0 14
 popmem 3 -1
 
 popmem 0 13
 pushmem 2 -1
-jump :continue
 
 :Nbelowzero
 popmem 3 0
@@ -312,13 +309,11 @@ pushmem 2 -1
 
 :continue
 
-
-
-
 pop rax
 push 0.02
 add
 push rax
+
 
 jump :loop2
 
@@ -341,7 +336,7 @@ jump :memset1
 
 
 :memset2
-push 1760
+push 880
 pop rax
 jae :end
 
@@ -358,10 +353,33 @@ jump :memset2
 
 
 
+:modeighty
+pop rax
+push 0
+je :putten
+
+push 80
+pop rax
+sub
+push rax
+
+pop rax
+push 0
+ja :putarrchar
+
+jump :modeighty
+
+
 :putten
 push 10
 prchar
-jump :cont1
+jump :end
+
+:putarrchar
+popmem 0 15
+popmem 2 -1
+prchar
+jump :end
 
 :end
 ret

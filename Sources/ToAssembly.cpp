@@ -10,19 +10,17 @@
 #define WRITE_int_inFunc(x) buffwrite_int(buff, IP, (x))
 
 
-
-
 int buffwrite_int(void* buff, int* IP, int value)
 {
-    *( (char*) ( (char*) buff + *IP) ) = value;
+    *( (int*) ( (int*) buff + *IP) ) = value;
     *IP += 1;
     return 0;
 }
 
 int buffwrite_dbl(void* buff, int* IP, double value)
 {
-    *( (double*) ( (char*) buff + *IP) ) = value;
-    *IP += 8;
+    *( (double*) ( (int*) buff + *IP) ) = value;
+    *IP += 2;
     return 0;
 }
 
@@ -38,6 +36,7 @@ int labelvalue(label** labels, label* seeklabel)
     int i = 0;
     while ((labels[i] != 0) && (i < MAXLABELSNUM))
     {
+
         if (strcmp(labels[i]->name, seeklabel->name) == 0)
         {
             printf("returned labelp %d of %s\n",  labels[i]->labelp, labels[i]->name);
@@ -63,7 +62,7 @@ int showlabel(label* label2show)
     return 0;
 }
 
-int writelabel(FILE* Comfile, FILE* ComAssFile, label** labels, label* labelnow, int* IP, char** buff, CommandType arg)
+int writelabel(FILE* Comfile, FILE* ComAssFile, label** labels, label* labelnow, int* IP, int** buff, CommandType arg)
 {
     int labelp = -1;
     char chrwordlabel[LNAMESIZE] = {0};
@@ -76,7 +75,7 @@ int writelabel(FILE* Comfile, FILE* ComAssFile, label** labels, label* labelnow,
             fprintf(ComAssFile, "invalid label value\n");
         }
         else {
-            printf("gonna write %d of label to file", labelp);
+            printf("gonna write %d of label to file\n", labelp);
             WRITE_int_inFunc(labelp);
             fprintf(ComAssFile, "%d ", arg);
             fprintf(ComAssFile, "%d\n", labelp);
@@ -87,6 +86,7 @@ int writelabel(FILE* Comfile, FILE* ComAssFile, label** labels, label* labelnow,
     }
     return 0;
 }
+
 
 int main(void)
 {
@@ -105,10 +105,11 @@ int main(void)
     FILE* output;
     output = fopen("TextFiles/CommandAssemblyFile.bin", "wb");
 
-    char** buff = (char**) calloc(BUFFSIZE, sizeof(char));
+    int** buff = (int**) calloc(BUFFSIZE, sizeof(int));
     int IP = 0;
 
     char chrword1[COMSIZE] = {0};
+    int intword = 0;
     double dblword = 0;
     char chrword2[COMSIZE] = {0};
 
@@ -121,15 +122,15 @@ int main(void)
 
     while (nstringsscaned >= 1)
     {
-        // printf("%s\n", chrword1);
+        printf("%s\n", chrword1);
 
         if (chrword1[0] == ':') {
             printf("i see label %s\n", chrword1);
 
             createlabel(&labelnow, (chrword1 + 1), IP);
             labelvalue(labels, &labelnow);
-            // if (labelvalue(labels, &labelnow) == -1)
-            //     printf("found new label %s on IP %d\n", labelnow.name, labelnow.labelp);
+            if (labelvalue(labels, &labelnow) == -1)
+                 printf("found new label %s on IP %d\n", labelnow.name, labelnow.labelp);
         }
         else if ( (strcmp(chrword1, "jump") == 0) || (strcmp(chrword1, "call") == 0) ||
                         (strcmp(chrword1, "ja") == 0) || (strcmp(chrword1, "jae") == 0) || (strcmp(chrword1, "jb") == 0) ||
@@ -139,12 +140,30 @@ int main(void)
             IP += 2;
         }
         else if (strcmp(chrword1, "push") == 0) {
-            if (fscanf(Comfile, "%lf", &dblword) == 1)
-                IP += 9;
-            else
+            if (fscanf(Comfile, "%lf", &dblword) == 1) {
+                printf("    value in push is %lf\n", dblword);
+                IP += 1 + 2;
+            }
+            else {
+                fscanf(Comfile, "%s", &chrword1);
+                printf("    value in push is %s\n", chrword1);
                 IP += 2;
+            }
         }
         else if (strcmp(chrword1, "pop") == 0) {
+            nstringsscaned = fscanf(Comfile, "%s", chrword1);
+            printf("    value in pop is %s\n", chrword1);
+            IP += 2;
+        }
+
+        else if ((strcmp(chrword1, "allocmem") == 0) || (strcmp(chrword1, "pushmem") == 0) || (strcmp(chrword1, "popmem") == 0))
+        {
+            nstringsscaned = fscanf(Comfile, "%s", chrword1);
+            nstringsscaned = fscanf(Comfile, "%s", chrword1);
+            IP += 2 + 2;
+        }
+        else if ( (strcmp(chrword1, "freemem") == 0))
+        {
             IP += 2;
         }
         else {
@@ -152,11 +171,12 @@ int main(void)
         }
         nstringsscaned = fscanf(Comfile, "%s", chrword1);
     }
-
     IP = 0;
     rewind(Comfile);
     int labelp = 0;
     nstringsscaned = fscanf(Comfile, "%s", chrword1);
+
+    printf("LOX");
 
     while (nstringsscaned >= 1)
     {
@@ -281,6 +301,8 @@ int main(void)
             }
         }
 
+
+
         else if (strcmp(chrword1, "add") == 0) {
             WRITE_int(add);
 
@@ -299,13 +321,124 @@ int main(void)
             fprintf(ComAssFile, "%d\n", mul);
         }
 
-        else if (strcmp(chrword1, "div_") == 0) {
+        else if (strcmp(chrword1, "div") == 0) {
             WRITE_int(div_);
 
             fprintf(ComAssFile, "%d\n", div_);
         }
 
-        else if (strcmp(chrword1, "sqrt_") == 0) {
+
+        else if (strcmp(chrword1, "allocmem") == 0) {
+            WRITE_int(allocmem);    //прочитали и записали команду аллокации
+            fprintf(ComAssFile, "%d ", allocmem);
+
+            intword = -1;
+            int n = fscanf(Comfile, "%d", &intword);
+            if ((n == 1) && (0 <= intword) && (intword <= 9)) {
+
+                WRITE_int(intword); //прочитали и записали номер массива для аллокации
+                fprintf(ComAssFile, "%d ", intword);
+
+                if (fscanf(Comfile, "%d", &intword) == 1) { //прочитали и записали размер аллоцированной памяти
+                    WRITE_dbl( (int) intword);
+                    fprintf(ComAssFile, "%d ", intword);
+                }
+                else {
+                    fprintf(ComAssFile, "invalid syntax - invalid array size");
+                }
+            }
+            else {
+                fprintf(ComAssFile, "invalid syntax - invalid array number %d", intword);
+            }
+            fprintf(ComAssFile, "\n");
+        }
+
+        else if (strcmp(chrword1, "freemem") == 0) {
+            WRITE_int(freemem);    //прочитали и записали команду очистки
+            fprintf(ComAssFile, "%d ", freemem);
+
+            intword = -1;
+            int n = fscanf(Comfile, "%d", &intword);
+            if ((n == 1) && (0 <= intword) && (intword <= 9)) {
+
+                WRITE_int(intword); //прочитали и записали номер массива для очистки
+                fprintf(ComAssFile, "%d ", intword);
+            }
+            else {
+                fprintf(ComAssFile, "invalid syntax - invalid array number %d (if -1: cant read)", intword);
+            }
+            fprintf(ComAssFile, "\n");
+        }
+
+        else if (strcmp(chrword1, "pushmem") == 0) {
+            WRITE_int(pushmem);    //прочитали и записали команду записи в память
+            fprintf(ComAssFile, "%d ", pushmem);
+
+            intword = -1;
+            int n = fscanf(Comfile, "%d", &intword);
+            if ((n == 1) && (0 <= intword) && (intword <= 9)) {
+
+                WRITE_int(intword); //прочитали и записали номер массива для записи
+                fprintf(ComAssFile, "%d ", intword);
+
+                if (fscanf(Comfile, "%d", &intword) == 1) { //прочитали и записали индекс элемента для записи
+                    WRITE_dbl( (int) intword);
+                    fprintf(ComAssFile, "%d ", intword);
+                }
+                else {
+                    fprintf(ComAssFile, "invalid syntax - invalid element index");
+                }
+            }
+            else {
+                fprintf(ComAssFile, "invalid syntax - invalid array number %d", intword);
+            }
+            fprintf(ComAssFile, "\n");
+        }
+
+        else if (strcmp(chrword1, "popmem") == 0) {
+            WRITE_int(popmem);    //прочитали и записали команду извлечения из памяти
+            fprintf(ComAssFile, "%d ", popmem);
+
+            intword = -1;
+            int n = fscanf(Comfile, "%d", &intword);
+            if ((n == 1) && (0 <= intword) && (intword <= 9)) {
+
+                WRITE_int(intword); //прочитали и записали номер массива для извлечения
+                fprintf(ComAssFile, "%d ", intword);
+
+                if (fscanf(Comfile, "%d", &intword) == 1) { //прочитали и записали индекс элемента для извлечения
+                    WRITE_dbl( (int) intword);
+                    fprintf(ComAssFile, "%d ", intword);
+                }
+                else {
+                    fprintf(ComAssFile, "invalid syntax - invalid element index");
+                }
+            }
+            else {
+                fprintf(ComAssFile, "invalid syntax - invalid array number %d", intword);
+            }
+            fprintf(ComAssFile, "\n");
+        }
+
+        else if (strcmp(chrword1, "ocr") == 0) {
+            WRITE_int(ocr);
+
+            fprintf(ComAssFile, "%d\n", ocr);
+        }
+
+        else if (strcmp(chrword1, "sin") == 0) {
+            WRITE_int(sin_);
+
+            fprintf(ComAssFile, "%d\n", sin_);
+        }
+
+        else if (strcmp(chrword1, "cos") == 0) {
+            WRITE_int(cos_);
+
+            fprintf(ComAssFile, "%d\n", sqrt_);
+        }
+
+        else if (strcmp(chrword1, "sqrt") == 0) {
             WRITE_int(sqrt_);
 
             fprintf(ComAssFile, "%d\n", sqrt_);
@@ -334,6 +467,12 @@ int main(void)
             else {
                 WRITE_label(call);
             }
+        }
+
+        else if (strcmp(chrword1, "printarr") == 0) {
+            WRITE_int(printarr);
+
+            fprintf(ComAssFile, "%d\n", printarr);
         }
 
         else if (strcmp(chrword1, "ja") == 0) {
@@ -414,21 +553,52 @@ int main(void)
             }
         }
 
+
         else if (strcmp(chrword1, "ret") == 0) {
             WRITE_int(ret);
 
             fprintf(ComAssFile, "%d\n", ret);
         }
 
+        else if (strcmp(chrword1, "clear") == 0) {
+            WRITE_int(clearCons);
+
+            fprintf(ComAssFile, "%d\n", clearCons);
+        }
+
+        else if (strcmp(chrword1, "prchar") == 0) {
+            WRITE_int(prchar);
+
+            fprintf(ComAssFile, "%d\n", prchar);
+        }
+
+        else if (strcmp(chrword1, "mod") == 0) {
+            WRITE_int(modint);
+            fprintf(ComAssFile, "%d ", modint);
+            if (fscanf(Comfile, "%lf", &dblword) == 1) {
+                WRITE_int((int) dblword);
+                fprintf(ComAssFile, "%lf\n", dblword);
+            }
+            else
+                fprintf(ComAssFile, "invelid syntaxis - value in mod isnt double");
+        }
         else
         {
-            fprintf(ComAssFile, "invalid syntaxis (command not found)");
+            printf("invalid huynya %s\n", chrword1);
+            fprintf(ComAssFile, "invalid syntaxis (command %s not found)", chrword1);
         }
 
         nstringsscaned = fscanf(Comfile, "%s", chrword1);
     }
+    printf("LOX");
 
-    fwrite(buff, sizeof(char), IP, output);
+    printf("\n");
+    for (int p = 0; (labels[p] != 0) && (p < MAXLABELSNUM); p++)
+    {
+        printf("%s = %d\n", labels[p]->name, labels[p]->labelp);
+    }
+
+    fwrite(buff, sizeof(int), IP, output);
 
     fclose(Comfile);
     fclose(ComAssFile);
