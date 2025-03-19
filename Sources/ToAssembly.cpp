@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "commvalues.h"
-#include "AssFunck.h"
+#include "AsmFunc.h"
 
 #define WRITE_int(x) buffwrite_int(buff, &IP, (x))
 #define WRITE_dbl(x) buffwrite_dbl(buff, &IP, (x))
@@ -582,6 +582,7 @@ int main(void)
             else
                 fprintf(ComAssFile, "invelid syntaxis - value in mod isnt double");
         }
+
         else
         {
             printf("invalid huynya %s\n", chrword1);
